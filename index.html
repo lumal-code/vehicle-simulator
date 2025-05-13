@@ -1,0 +1,29 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>WebGL</title>
+    <style>
+        canvas {
+            background-color: black;
+        }
+    </style>
+  </head>
+  <body>
+    <canvas id="demo-canvas" width="800px" height="600px">
+      <!-- This message shows up only if the Canvas element isn't supported -->
+      HTML5 canvas not supported in your browser! These demos will not work.
+    </canvas>
+    <button id="reset car">Reset Car</button>
+    <button id="reset terrain">Regenerate Terrain</button>
+    <p id="velocity">
+        Current Velocity:
+    </p>
+    <script type="module" src="main.js"></script>
+    <script type="module" src="graphics/renderer.js"></script>
+    <script type="module" src="objects/vehicle.js"></script>
+  </body>
+</html>
