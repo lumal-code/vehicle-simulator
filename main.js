@@ -48,6 +48,14 @@ resetTerrainBtn.addEventListener('click', (e) => {
     terrain = new Terrain(gl);
 });
 
+//set up vector visibility
+for (const [name, _] of Object.entries(vehicle.forces)) {
+    let box = document.getElementById(name);
+    box.addEventListener("change", () => {
+        vehicle.forcesDraw[name] = !vehicle.forcesDraw[name];
+    });
+}
+
 let lastTime = 0;
 let totalTime = 0;
 

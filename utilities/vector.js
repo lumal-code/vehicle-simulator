@@ -52,4 +52,9 @@ export class Vec2 {
         this.y = y;
         return this;
     }
+
+    draw(renderer, color, x,y) {
+        //0.0025 scales down forces so that a 12000N force will be 30 pixels
+        renderer.drawLine(color, x, y, new Vec2(this.x * 0.01, this.y  * 0.01));
+    }
 }

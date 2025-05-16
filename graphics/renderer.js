@@ -41,6 +41,18 @@ export function initRenderer(gl) {
         }
     };
 
+    const lineProgram = initShaderProgram(gl, lineVertexShaderSource(), lineFragmentShaderSource());
+    const lineProgramInfo = {
+        program: lineProgram,
+        attribLocations: {
+          vertexPosition: gl.getAttribLocation(lineProgram, "aPosition"),
+        },
+        uniformLocations: {
+            matrixLoc: gl.getUniformLocation(lineProgram, 'uMatrix'),
+            color: gl.getUniformLocation(lineProgram, 'color'),
+        }
+    };
+
     return {
         drawQuad: (x, y, width, height) => {
             const gridProgram = initShaderProgram(gl, gridVertexShaderSource(), gridFragmentShaderSource());
@@ -183,6 +195,28 @@ export function initRenderer(gl) {
             matrix = m3.multiply(matrix, m3.scaling(width, -height));
 
             drawImage(gl, batteryProgramInfo, tex, x, y, width, height, matrix);
+        },
+
+        drawLine: (color, x, y, vector) => {
+            gl.useProgram(lineProgram);
+
+            let matrix = m3.orthographic(0, gl.canvas.width, 0, gl.canvas.height);
+            matrix = m3.multiply(matrix, m3.translation(x, y));
+
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            const positions = new Float32Array([
+                0, 0,
+                vector.x, vector.y
+            ]);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(lineProgramInfo.attribLocations.vertexPosition);
+            gl.vertexAttribPointer(lineProgramInfo.attribLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+
+            gl.uniform3fv(lineProgramInfo.uniformLocations.color, color);
+            gl.uniformMatrix3fv(lineProgramInfo.uniformLocations.matrixLoc, false, matrix);
+
+            gl.drawArrays(gl.LINES, 0, 2);
         }
     }
 }
@@ -390,5 +424,32 @@ function gridFragmentShaderSource() {
 
     void main() {
         fragColor = vec4(0.0,0.0,0.0,1.0);
+    }`;
+}
+
+function lineVertexShaderSource() {
+    return `#version 300 es
+
+    in vec2 aPosition;
+
+    uniform mat3 uMatrix;
+
+    void main() {
+        vec3 pos = uMatrix * vec3(aPosition, 1.0);
+        gl_Position = vec4(pos.xy, 0.0, 1.0);
+    }`;
+}
+
+function lineFragmentShaderSource() {
+    return `#version 300 es
+
+    precision mediump float;
+
+    uniform vec3 color;
+
+    out vec4 fragColor;
+
+    void main() {
+        fragColor = vec4(color,1.0);
     }`;
 }
