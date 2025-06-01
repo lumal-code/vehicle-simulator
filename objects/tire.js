@@ -8,9 +8,9 @@ export class Tire {
         let defaultDistX = 0;
         let defaultDistY = 0;
         if (tire < 2) {
-            defaultDistX = carWidth - centerPointX - 10;
+            defaultDistX = carWidth - centerPointX + 10;
         } else {
-            defaultDistX = -centerPointX + 10;
+            defaultDistX = -centerPointX;
         }
 
         if (tire == 1 || tire == 2) {
@@ -25,10 +25,16 @@ export class Tire {
         this.height = 1;
     }
 
-    update(x, y, theta, terrain) {
+    update(vehicle, x, y, theta, terrain) {
         this.x = Math.round(x + this.hypotenuse * Math.cos(theta + this.defaultAngle));
         this.y = Math.round(y + this.hypotenuse * Math.sin(theta + this.defaultAngle));
         this.height = terrain.heightAtPixel(this.x, this.y);
+        if(this.x < 0 || this.x > terrain.gl.canvas.width) {
+            vehicle.resetCar();
+        }
+        if(this.y < 0 || this.y > terrain.gl.canvas.height) {
+            vehicle.resetCar();
+        }
     }
 
     draw(renderer) {

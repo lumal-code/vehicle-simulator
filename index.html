@@ -6,24 +6,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>WebGL</title>
-    <style>
-        canvas {
-            background-color: black;
-        }
-    </style>
+    <link rel="stylesheet" href="main.css">
   </head>
   <body>
-    <canvas id="demo-canvas" width="800px" height="600px">
-      <!-- This message shows up only if the Canvas element isn't supported -->
-      HTML5 canvas not supported in your browser! These demos will not work.
-    </canvas>
-    <button id="reset car">Reset Car</button>
-    <button id="reset terrain">Regenerate Terrain</button>
-    <p id="velocity">
-        Current Velocity:
-    </p>
+    <div id="scroll-ban">
+      <canvas id="demo-canvas">
+        <!-- This message shows up only if the Canvas element isn't supported -->
+        HTML5 canvas not supported in your browser! These demos will not work.
+      </canvas>
+      <div id="tuning-panel">
+        <div class="tab-bar">
+          <button id="vehicle-tab" class="tab active-tab">Vehicle</button>
+          <button id="world-tab" class="tab">World</button>
+        </div>
+        <div id="vehicle-properties" class="property active">
+          <div id="battery">
+            <p>Battery: </p>
+            <div id="battery-child">
+            </div>
+          </div>
+
+          <p id="velocity">
+              Current Velocity:
+          </p>
+          <form id="vehicle-property-form">
+            <label>
+              Mass:
+              <input type="number" name="mass" value="1800" min="0" step="10"/>
+            </label>
+            <label>
+              Engine Force:
+              <input type="number" name="engine-force" value="12000" min="0" max="1000000" step="1000"/>
+            </label>
+            <label>
+              Braking Force:
+              <input type="number" name="brake-force" value="12000" min="0" max="1000000" step="1000"/>
+            </label>
+            <label>
+              Battery Size:
+              <input type="number" name="battery" value="10" min="0" max="1000" step="1"/>
+            </label>
+            <button type="submit">Apply Changes</button>
+          </form>
+          <button id="reset car" class="reset-btn">Reset Car</button>
+        </div>
+        <div id="world-properties" class="property">
+          <form id="vector-form">
+            <label>
+              <input type="checkbox" id="curF_engine" name="interest" value="F_engine" />
+              F_engine
+            </label>
+            <label>
+              <input type="checkbox" id="F_gravity" name="interest" value="F_gravity" />
+              F_gravity
+            </label>
+            <label>
+              <input type="checkbox" id="curF_brake" name="interest" value="F_brake" />
+              F_brake
+            </label>
+            <label>
+              <input type="checkbox" id="F_rr" name="interest" value="F_rr" />
+              F_rr
+            </label>
+            <label>
+              <input type="checkbox" id="F_drag" name="interest" value="F_drag" />
+              F_drag
+            </label>
+            <label>
+              <input type="checkbox" id="F_lf" name="interest" value="F_lat" />
+              F_lat
+            </label>
+          </form>
+          <button id="reset terrain" class="reset-btn">Regenerate Terrain</button>
+        </div>
+      </div>
+    </div>
     <script type="module" src="main.js"></script>
-    <script type="module" src="graphics/renderer.js"></script>
-    <script type="module" src="objects/vehicle.js"></script>
   </body>
 </html>

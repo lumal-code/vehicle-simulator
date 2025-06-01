@@ -100,14 +100,20 @@ export function createPerlinTexture(gl, width, height) {
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
 
-    const data = generateNoiseTexture(width, height);
+    const maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    const texWidth = Math.min(width, maxTexSize);
+    const texHeight = Math.min(height, maxTexSize);
+
+    const data = generateNoiseTexture(texWidth, texHeight);
+
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
     gl.texImage2D(
         gl.TEXTURE_2D,
         0,
         gl.LUMINANCE,
-        width,
-        height,
+        texWidth,
+        texHeight,
         0,
         gl.LUMINANCE,
         gl.UNSIGNED_BYTE,
@@ -124,7 +130,11 @@ export function createPerlinTexture(gl, width, height) {
 }
 
 function createPermutationTable() {
-    const perm = Array.from({ length: 256 }, (_, i) => i);
+    const perm = new Uint8Array(512);
+
+    for (let i = 0; i < 256; i++) {
+        perm[i] = i;
+    }
 
     for (let i = 255; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

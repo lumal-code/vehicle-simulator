@@ -41,6 +41,18 @@ export function initRenderer(gl) {
         }
     };
 
+    const lineProgram = initShaderProgram(gl, lineVertexShaderSource(), lineFragmentShaderSource());
+    const lineProgramInfo = {
+        program: lineProgram,
+        attribLocations: {
+          vertexPosition: gl.getAttribLocation(lineProgram, "aPosition"),
+        },
+        uniformLocations: {
+            matrixLoc: gl.getUniformLocation(lineProgram, 'uMatrix'),
+            color: gl.getUniformLocation(lineProgram, 'color'),
+        }
+    };
+
     return {
         drawQuad: (x, y, width, height) => {
             const gridProgram = initShaderProgram(gl, gridVertexShaderSource(), gridFragmentShaderSource());
@@ -60,8 +72,52 @@ export function initRenderer(gl) {
             const vertexBufferData = new Float32Array([
                 x1, y1,
                 x2, y1,
-                x2,  y2,
+                x2, y2,
                 x1, y2,
+            ]);
+
+            const elementIndexData = new Uint8Array([
+                0,1,2,
+                2,3,0,
+            ]);
+
+            const vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, vertexBufferData, gl.STATIC_DRAW);
+            gl.vertexAttribPointer(gridProgramInfo.attribLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(gridProgramInfo.attribLocations.vertexPosition);
+
+            const indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, elementIndexData, gl.STATIC_DRAW);
+
+            gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
+        },
+
+        drawCliff: (p1, p2, p3, p4) => {
+            const gridProgram = initShaderProgram(gl, gridVertexShaderSource(), gridFragmentShaderSource());
+            const gridProgramInfo = {
+                program: gridProgram,
+                attribLocations: {
+                  vertexPosition: gl.getAttribLocation(gridProgram, "aPosition"),
+                },
+            };
+
+            const x1 = (p1.x / gl.canvas.width) * 2 - 1;
+            const y1 = 1 - (p1.y / gl.canvas.height) * 2;
+            const x2 = ((p2.x) / gl.canvas.width) * 2 - 1;
+            const y2 = 1 - ((p2.y) / gl.canvas.height) * 2;
+            const x3 = ((p3.x) / gl.canvas.width) * 2 - 1;
+            const y3 = 1 - ((p3.y) / gl.canvas.height) * 2;
+            const x4 = ((p4.x) / gl.canvas.width) * 2 - 1;
+            const y4 = 1 - ((p4.y) / gl.canvas.height) * 2;
+
+            gl.useProgram(gridProgramInfo.program);
+            const vertexBufferData = new Float32Array([
+                x1, y1,
+                x2, y2,
+                x3, y3,
+                x4, y4,
             ]);
 
             const elementIndexData = new Uint8Array([
@@ -108,6 +164,7 @@ export function initRenderer(gl) {
 
             drawImage(gl, backgroundProgramInfo, backgroundTex, 0, 0, gl.canvas.width, gl.canvas.height, matrix);
         },
+
         /* draws a vehicle
         * param rotateX xLocation in pixels from origin of image of where to rotate off of
         * param rotateY yLocation in pixels from origin of image of where to rotate off of
@@ -118,10 +175,10 @@ export function initRenderer(gl) {
             let matrix = m3.orthographic(0, gl.canvas.width, 0, gl.canvas.height);
             matrix = m3.multiply(matrix, m3.translation(x, y));
             matrix = m3.multiply(matrix, m3.rotation(rot)); 
-            matrix = m3.multiply(matrix, m3.translation(-rotateX, rotateY));
-            matrix = m3.multiply(matrix, m3.rotation(Math.PI / 2)); // math.pi / 2 to account for the fact that my image starts facing up 
-            matrix = m3.multiply(matrix, m3.translation(0, height));
-            matrix = m3.multiply(matrix, m3.scaling(width, -height));
+            matrix = m3.multiply(matrix, m3.translation(-rotateX, -rotateY));
+            // matrix = m3.multiply(matrix, m3.rotation(Math.PI / 2)); // math.pi / 2 to account for the fact that my image starts facing up 
+            //matrix = m3.multiply(matrix, m3.translation(0, height));
+            matrix = m3.multiply(matrix, m3.scaling(width, height));
 
             drawImage(gl, vehicleProgramInfo, vehicleTex, x, y, width, height, matrix);
         },
@@ -162,18 +219,6 @@ export function initRenderer(gl) {
             gl.drawArrays(gl.LINES, 0, positionArr.length / 2);
         },
 
-        // drawTire: () => {
-        //     const gridProgram = initShaderProgram(gl, gridVertexShaderSource(), gridFragmentShaderSource());
-        //     const gridProgramInfo = {
-        //         program: gridProgram,
-        //         attribLocations: {
-        //           vertexPosition: gl.getAttribLocation(gridProgram, "aPosition"),
-        //         },
-        //     };
-
-        //     gl.drawArrays(gl.PO, 0, positionArr.length / 2);
-        // },
-
         drawBattery: (tex, x, y, width, height) => {
             gl.useProgram(batteryProgram);
             
@@ -183,6 +228,28 @@ export function initRenderer(gl) {
             matrix = m3.multiply(matrix, m3.scaling(width, -height));
 
             drawImage(gl, batteryProgramInfo, tex, x, y, width, height, matrix);
+        },
+
+        drawLine: (color, x, y, vector) => {
+            gl.useProgram(lineProgram);
+
+            let matrix = m3.orthographic(0, gl.canvas.width, 0, gl.canvas.height);
+            matrix = m3.multiply(matrix, m3.translation(x, y));
+
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            const positions = new Float32Array([
+                0, 0,
+                vector.x, vector.y
+            ]);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(lineProgramInfo.attribLocations.vertexPosition);
+            gl.vertexAttribPointer(lineProgramInfo.attribLocations.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+
+            gl.uniform3fv(lineProgramInfo.uniformLocations.color, color);
+            gl.uniformMatrix3fv(lineProgramInfo.uniformLocations.matrixLoc, false, matrix);
+
+            gl.drawArrays(gl.LINES, 0, 2);
         }
     }
 }
@@ -390,5 +457,32 @@ function gridFragmentShaderSource() {
 
     void main() {
         fragColor = vec4(0.0,0.0,0.0,1.0);
+    }`;
+}
+
+function lineVertexShaderSource() {
+    return `#version 300 es
+
+    in vec2 aPosition;
+
+    uniform mat3 uMatrix;
+
+    void main() {
+        vec3 pos = uMatrix * vec3(aPosition, 1.0);
+        gl_Position = vec4(pos.xy, 0.0, 1.0);
+    }`;
+}
+
+function lineFragmentShaderSource() {
+    return `#version 300 es
+
+    precision mediump float;
+
+    uniform vec3 color;
+
+    out vec4 fragColor;
+
+    void main() {
+        fragColor = vec4(color,1.0);
     }`;
 }
