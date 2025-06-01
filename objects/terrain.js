@@ -1,83 +1,64 @@
 import { createPerlinTexture } from "../utilities/perlin-noise.js";
+import { Cliff } from "./cliffs.js";
+import { Vec2 } from "../utilities/vector.js";
 
 export class Terrain {
     constructor(gl) {
         //this.terrain = createStandardTexture(gl, gl.canvas.width, gl.canvas.height);
         this.terrain = createPerlinTexture(gl, gl.canvas.width, gl.canvas.height);
+        this.cliffs = [new Cliff(0,0,gl.canvas.width/2,gl.canvas.height/2),
+            new Cliff(gl.canvas.width/2,gl.canvas.height/2,gl.canvas.width,gl.canvas.height)];
         this.gl = gl;
     }
 
     drawBackground(renderer) {
         renderer.drawBackground(this.terrain.tex);
+        for (const cliff of this.cliffs) {
+            cliff.draw(renderer);
+        }
     }
 
     heightAtPixel(x, y) {
         return this.terrain.data[this.gl.canvas.width * Math.floor(y) + Math.floor(x)];
     }
+
+    checkCollision(vehicle) {
+        for (const cliff of this.cliffs) {
+            if (colliding(vehicle, cliff.rect)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
-// export function initTerrain(gl, renderer) {
-//     //const terrain = createPerlinTexture(gl, gl.canvas.width, gl.canvas.height);
-//     const terrain = createStandardTexture(gl, gl.canvas.width, gl.canvas.height)
-//     return {
-//         drawBackground: () => {
-//             renderer.drawBackground(terrain.tex);
-//         },
-//         heightAtPixel: (x,y) => {
-//             return terrain.data[gl.canvas.width * Math.floor(y) + Math.floor(x)];
-//         }
-//     }
-// }
-function createStandardTexture(gl, width, height) {
-    const tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
+function colliding(vehicle, rect) {
+    let offsetVec = new Vec2(vehicle.centerX, vehicle.centerY);
+    offsetVec = offsetVec.rotate(vehicle.drivingAngle)
+    const centerVec = new Vec2(vehicle.x, vehicle.y);
 
-    const data = new Uint8Array(width * height);
+    const widthVec = new Vec2(vehicle.height, 0).rotate(vehicle.drivingAngle);
+    const heightVec = new Vec2(0, vehicle.width).rotate(vehicle.drivingAngle);
 
-    const maxHeight = 255;
-    const hillRadius = Math.min(width, height) / 2; // How big each hill is
+    const tLVec = centerVec.subtract(offsetVec);
+    const bLVec = tLVec.add(widthVec);
+    const bRVec = bLVec.add(heightVec);
+    const tRVec = tLVec.add(heightVec);
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            // Distance to each corner
-            const dTopLeft = Math.hypot(x, y);
-            const dTopRight = Math.hypot(width - x, y);
-            const dBottomLeft = Math.hypot(x, height - y);
-            const dBottomRight = Math.hypot(width - x, height - y);
+    const points = [tLVec, bLVec, bRVec, tRVec];
 
-            // Take the closest corner
-            const d = Math.min(dTopLeft, dTopRight, dBottomLeft, dBottomRight);
-
-            // If within the hill radius, height is based on distance
-            let value = 0;
-            if (d < hillRadius) {
-                value = maxHeight * (1 - d / hillRadius);
-            }
-
-            value = Math.max(0, Math.min(255, Math.floor(value)));
-            data[width * y + x] = value;
+    let xColliding = false;
+    let yColliding = false;
+    for (const point of points) {
+        if (point.x > rect[0].x && point.x < rect[2].x) {
+            xColliding = true;
+        }
+        if (point.y > rect[0].y && point.y < rect[2].y) {
+            yColliding = true;
+        }
+        if (xColliding && yColliding) {
+            return true;
         }
     }
-
-    gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.LUMINANCE,
-        width,
-        height,
-        0,
-        gl.LUMINANCE,
-        gl.UNSIGNED_BYTE,
-        data
-    );
-
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-    gl.bindTexture(gl.TEXTURE_2D, null);
-    return { data, tex };
+    return false;
 }
-
-

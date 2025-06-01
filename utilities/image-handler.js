@@ -1,4 +1,4 @@
-export function loadImageAndCreateTextureInfo(gl, url) {
+export function loadImageAndCreateTextureInfo(gl, url, vehicle) {
     var tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
 
@@ -20,7 +20,10 @@ export function loadImageAndCreateTextureInfo(gl, url) {
         textureInfo.height = img.height;
 
         gl.bindTexture(gl.TEXTURE_2D, textureInfo.texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+        vehicle.updateSize(img.width, img.height);
     });
     img.src = url;
     return textureInfo;

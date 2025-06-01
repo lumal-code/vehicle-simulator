@@ -1,0 +1,103 @@
+body {
+    margin: 0;
+}
+
+#scroll-ban {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+canvas {
+    background-color: black;
+    display: block;
+    position: absolute;
+    width: 100;
+}
+
+#tuning-panel {
+    background-color: rgba(0,0,0,0.5);
+    position: absolute;
+    width: 20%;
+    display: flex;
+    flex-direction: column;
+    color: lightgray;
+    padding: 5px;
+}
+
+#vector-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-bar {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    margin-bottom: 5px;
+    margin-left: -5px;
+    margin-right: -5px;
+}
+
+.tab {
+    color: gray;
+    border: none;
+    border-bottom: 1px solid gray;
+    background-color: transparent;
+    padding: 0.5rem;
+    flex-grow: 1;
+    
+}
+
+.tab:hover {
+    color: white;
+    border-color: white;
+}
+
+.active-tab {
+    color: white;
+    border-color: white;
+}
+
+.reset-btn {
+    color: white;
+    border: 1px solid white;
+    border-radius: 0.25rem;
+    background-color: rgb(82, 90, 92);
+    padding: 0.5rem;
+    margin:0px;
+    
+}
+
+.reset-btn:hover {
+    color: white;
+    background-color: rgb(62, 70, 72);
+    border-color: white;
+    cursor: pointer;
+}
+
+#vehicle-properties {
+    width: 100%;
+}
+
+.property {
+    display: none;
+}
+
+.active {
+    display: block;
+}
+
+#battery-child {
+    width: 80%;
+    height: 10px;
+    margin-left: 5px;
+    background-color: green;
+}
+
+#vehicle-property-form {
+    display: flex;
+    flex-direction: column;
+}

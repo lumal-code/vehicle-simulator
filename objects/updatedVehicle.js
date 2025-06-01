@@ -4,29 +4,29 @@ import { Battery } from "./battery.js";
 import { Vec2 } from "../utilities/vector.js";
 
 export class Vehicle {
-    constructor(gl) {
+    constructor(gl, batteryEl) {
         this.PIXELS_TO_METERS = 5;
         this.spawnX = 100;
         this.spawnY = 500;
         this.x = this.spawnX;
         this.y = this.spawnY;
-        this.tex = loadImageAndCreateTextureInfo(gl, '/vehicle-simulator/resources/car.png');
-        this.width = this.tex.width / 10;
-        this.height = this.tex.height / 10;
-        this.centerX = this.width * 0.3;
-        this.centerY = this.height * 0.5;
+        this.tex = loadImageAndCreateTextureInfo(gl, '/vehicle-simulator/resources/newcar.png', this);
+        this.width = 1; //wait for image to load and then reset to real values
+        this.height = 1;
+        this.centerX = 1;
+        this.centerY = 1;
         this.wheelbase = 2.5;
         this.tires = [];
         for (let i = 0; i < 4; i++) {
-            this.tires[i] = new Tire(this.x, this.y, this.height, this.width, this.centerX, this.centerY, i);
+            this.tires[i] = new Tire(this, this.x, this.y, this.height, this.width, this.centerX, this.centerY, i);
         }
-        this.battery = new Battery(10, gl); //10kWh
+        this.battery = new Battery(10, gl, batteryEl); //10kWh
         this.velocity = new Vec2(0,0);
         this.acceleration = new Vec2(0,0);
         this.distance = 0;
         this.sliding = false;
         this.turning = false;
-        this.drivingAngle = 0;
+        this.drivingAngle = Math.PI / 2;
         this.steeringAngle = 0;
         this.steeringRate = 1;
         this.maxSteering = Math.PI / 6;
@@ -36,14 +36,12 @@ export class Vehicle {
         this.m = 1800;
         this.engine_force_mag = 12000; 
         this.brake_force_mag = 12000;
-        this.r = 0.3;
         this.n = 0.25;
         this.C = 0.29;
         this.rho = 1.225;
         this.A = 2.2;
         this.N = this.m*this.g*Math.cos(this.angleVec);
         this.C_r = 0.02;
-        this.C_bf;
         this.forces = {
             curF_engine: new Vec2(0,0),
             curF_brake: new Vec2(0,0),
@@ -60,6 +58,17 @@ export class Vehicle {
             F_lf: false,
             F_rr: false,
         }
+    }
+
+    updateSize(width, height) {
+        //adjust the size so that it fits the picture properly
+        //these numbers were just adjusted until it worked
+        this.width = width / 12;
+        this.height = height / 12;
+        this.centerX = this.width * 0.5;
+        this.centerY = this.height * 0.3;
+
+        this.initializeTires();
     }
 
     calculateNormalForce(m, g, angleVec) {
@@ -95,8 +104,8 @@ export class Vehicle {
         const forward = new Vec2(1,0).rotate(this.drivingAngle).normalize();
         const lateral = new Vec2(-forward.y, forward.x).normalize();
         const lat_direction = lateral.dot(this.velocity);
-        const frictionMag = 0.9 * N; 
-        const force = lateral.scale(-Math.sign(lat_direction) * frictionMag); //0.8 is coeff of lateral friction
+        const frictionMag = 3 * N; 
+        const force = lateral.scale(-Math.sign(lat_direction) * frictionMag); 
         return force;
     }
 
@@ -113,26 +122,20 @@ export class Vehicle {
     draw(renderer) {
         renderer.drawVehicle(
             this.tex.texture, 
-            -this.drivingAngle, 
+            (Math.PI / 2) - this.drivingAngle, 
             this.x, 
             this.y, 
             this.width, 
             this.height,
-            this.width * 0.3,
-            this.height * 0.5
+            this.centerX,
+            this.centerY
         );
-
-        this.battery.drawBattery(renderer);
 
         for(const [name, value] of Object.entries(this.forcesDraw)) {
             if (value) {
                 this.forces[name].draw(renderer, [1.0, 0.0, 0.0], this.x, this.y);
             }
         }
-        /*
-        for (let i = 0; i < this.tires.length; i++) {
-            this.tires[i].draw(renderer);
-        }*/
     }
 
     resetCar() {
@@ -190,12 +193,14 @@ export class Vehicle {
     }
 
     update(dt, terrain) {
-        // TODO: add gravity
-        // //console.log("TIRES:");
-        for (let i = 0; i < 4; i++) {
-            this.tires[i].update(this.x, this.y, this.drivingAngle, terrain);
-            //console.log("Tire " + i + ": [" + this.tires[i].x + ", " + this.tires[i].y + "] with a height of " + this.tires[i].height);
+        if(isNaN(this.velocity.length())) {
+            this.resetCar();
         }
+
+        for (let i = 0; i < 4; i++) {
+            this.tires[i].update(this, this.x, this.y, this.drivingAngle, terrain);
+        }
+
         const frontAvg = (this.tires[0].height + this.tires[1].height) / 2;
         const rearAvg = (this.tires[2].height + this.tires[3].height) / 2;
         const leftAvg  = (this.tires[0].height + this.tires[2].height) / 2;
@@ -211,7 +216,6 @@ export class Vehicle {
 
         this.forces.F_gravity = this.calculateGravityVec(this.m, this.g, this.angleVec, forward, lat);
 
-        //console.log("o: " + (5*(this.tires[0].height + this.tires[1].height) / 2 - 5*(this.tires[2].height + this.tires[3].height) / 2));
         this.N = this.calculateNormalForce(this.m, this.g, this.angleVec);
         this.forces.F_drag = this.calculateDragForce(
             this.C,
@@ -228,7 +232,7 @@ export class Vehicle {
         this.forces.F_lf = this.calculateLateralFriction(
             this.N
         )
-        //console.log(F_gravity);
+
         const returnRate = 4;
         if (!this.turning) {
             this.steeringAngle += -this.steeringAngle * returnRate * dt;
@@ -242,7 +246,6 @@ export class Vehicle {
             .add(this.forces.F_lf);
 
         this.acceleration = totalForce.scale(dt/this.m);
-        //console.log(this.acceleration);
         
         this.velocity = this.velocity
             .clone()
@@ -251,8 +254,14 @@ export class Vehicle {
         this.battery.updateBattery(this.velocity, this.forces.curF_engine, dt, this.PIXELS_TO_METERS);
         
         this.drivingAngle += this.updateDrivingAngle(this, dt);
-        //console.log(this.drivingAngle);
         this.x += this.velocity.x * dt * this.PIXELS_TO_METERS;
         this.y += this.velocity.y * dt * this.PIXELS_TO_METERS;
+    }
+
+    initializeTires() {
+        this.tires = [];
+        for (let i = 0; i < 4; i++) {
+            this.tires[i] = new Tire(this.x, this.y, this.width, this.height, this.centerX, this.centerY, i);
+        }
     }
 }

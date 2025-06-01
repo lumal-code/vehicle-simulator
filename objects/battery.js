@@ -1,5 +1,5 @@
 export class Battery {
-    constructor(size, gl) {
+    constructor(size, gl, battery) {
         this.gl = gl;
         this.width = 200;
         this.height = 25;
@@ -10,7 +10,7 @@ export class Battery {
         this.batteryColor = [255, 0, 0, 255];
         this.x = 550;
         this.y = 25;
-        
+        this.batteryElement = battery;
     }
 
     updateBattery(velocity, F_engine, dt, pixelMeterRatio) {
@@ -21,14 +21,16 @@ export class Battery {
         }
 
         this.batteryColor = [255 - 255 * this.batteryLeft / this.size, 255 * this.batteryLeft / this.size, 0, 255];
+        const r = 255 - 255 * this.batteryLeft / this.size;
+        const g = 255 * this.batteryLeft / this.size;
+        const b = 0;
+        this.batteryElement.children[1].style.width = `${this.width * (this.batteryLeft / this.size)}px`;
+        this.batteryElement.children[1].style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+        this.batteryElement.children[0].innerText = `Battery: ${Math.round(100*this.batteryLeft / this.size)}%`;
     }
 
     chargeBattery() {
         this.batteryLeft = this.size;
-    }
-
-    drawBattery(renderer) {
-        renderer.drawBattery(this.tex, this.x, this.y, this.width, this.height);
     }
 
     updateBatteryTexture() {
@@ -52,7 +54,7 @@ export class Battery {
                 this.texInfo[i + 3] = 255;
             }
         }
-        //console.log("updated textre: " + this.texInfo);
+
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.tex);
         this.gl.texSubImage2D(
             this.gl.TEXTURE_2D, 
