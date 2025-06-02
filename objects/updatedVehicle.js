@@ -10,7 +10,7 @@ export class Vehicle {
         this.spawnY = 500;
         this.x = this.spawnX;
         this.y = this.spawnY;
-        this.tex = loadImageAndCreateTextureInfo(gl, '/vehicle-simulator/resources/newcar.png', this);
+        this.tex = loadImageAndCreateTextureInfo(gl, '/resources/newcar.png', this);
         this.width = 1; //wait for image to load and then reset to real values
         this.height = 1;
         this.centerX = 1;
